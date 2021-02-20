@@ -1,4 +1,6 @@
-@[TOC]
+- [dasd](#dasd)
+    - [dasd](#dasd-1)
+  - [oiooj](#oiooj)
 
 # Java
 
