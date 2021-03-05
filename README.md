@@ -61,6 +61,69 @@
   - [抓抛模型](#抓抛模型)
   - [try-catch-finally](#try-catch-finally)
   - [throw&throws](#throwthrows)
+- [多线程基本概念](#多线程基本概念)
+  - [程序（program）](#程序program)
+  - [进程（process）](#进程process)
+  - [线程（thread）](#线程thread)
+  - [多线程（multi-thread）](#多线程multi-thread)
+    - [优点](#优点-1)
+    - [应用场合](#应用场合)
+    - [生成线程](#生成线程)
+- [Java同步机制来解决线程安全的问题](#java同步机制来解决线程安全的问题)
+  - [死锁](#死锁)
+  - [同步机制](#同步机制)
+    - [同步代码块](#同步代码块)
+    - [同步方法](#同步方法)
+    - [Lock（JDK5.0增加）](#lockjdk50增加)
+      - [synchronized和Lock的异同点](#synchronized和lock的异同点)
+  - [线程通信](#线程通信)
+    - [涉及到的方法：wait() & notify() & notifyAll()](#涉及到的方法wait--notify--notifyall)
+    - [sleep() & wait()](#sleep--wait)
+  - [创建线程的其他方式](#创建线程的其他方式)
+    - [实现Callable接口（JDK5增加）](#实现callable接口jdk5增加)
+    - [线程池](#线程池)
+- [常用类](#常用类)
+  - [枚举类](#枚举类)
+  - [Date类](#date类)
+    - [基本概念](#基本概念-1)
+    - [相关的API](#相关的api)
+  - [BigInteger类&BigDecimal类](#biginteger类bigdecimal类)
+  - [String类](#string类)
+    - [说明](#说明-2)
+    - [String & StringBuffer & StringBuilder](#string--stringbuffer--stringbuilder)
+    - [StringBuffer & StringBuilder的方法](#stringbuffer--stringbuilder的方法)
+- [Java 比较器](#java-比较器)
+  - [使用背景](#使用背景)
+  - [实现](#实现)
+    - [自然排序：使用Comparable接口](#自然排序使用comparable接口)
+    - [定制排序：实现Comparator接口](#定制排序实现comparator接口)
+    - [两种排序方式的比较](#两种排序方式的比较)
+- [集合](#集合)
+  - [集合与数组](#集合与数组)
+  - [集合的分类](#集合的分类)
+    - [Collection接口](#collection接口)
+      - [1. 迭代器接口：Iterator](#1-迭代器接口iterator)
+      - [2. foreach（内部仍然调用了迭代器）](#2-foreach内部仍然调用了迭代器)
+    - [Collection子接口：List](#collection子接口list)
+    - [Collection子接口：Set](#collection子接口set)
+    - [Map接口](#map接口)
+      - [HashMap的实现原理](#hashmap的实现原理)
+  - [Collections工具类](#collections工具类)
+- [IO流](#io流)
+  - [File类](#file类)
+    - [理解](#理解)
+    - [File的实例化](#file的实例化)
+  - [IO流](#io流-1)
+    - [流的分类](#流的分类)
+    - [重要的流结构](#重要的流结构)
+    - [输入、输出的标准化过程](#输入输出的标准化过程)
+    - [缓冲流](#缓冲流)
+    - [转换流](#转换流)
+    - [对象流](#对象流)
+- [注解Annotation](#注解annotation)
+  - [理解](#理解-1)
+  - [使用案例](#使用案例)
+  - [元注解](#元注解)
 
 ## Java语言概述
 
@@ -207,8 +270,8 @@ Java ME(Java Micro Edition)
 2 引用数据类型
 
 *  类（class）
-* 接口（interface）
-* 数组（array）
+*  接口（interface）
+*  数组（array）
 
 
 
@@ -755,7 +818,6 @@ class C extends B implements A{
 
 
 
-
 ## 异常处理
 
 ### Error
@@ -860,4 +922,873 @@ class Student{
 
 
 
+## 多线程基本概念
 
+### 程序（program）
+
+一段静态的代码
+
+### 进程（process）
+
+* 程序的一次执行过程，或者是正在运行的程序，如：运行中的QQ
+
+* 程序是静态的，进程是动态的
+
+* 进程是资源分配的单位
+
+### 线程（thread）
+
+* 进程可细分为线程，是一个程序内部的一条执行路径
+
+* 若一个进程同一时间并行执行多个线程，就是支持多线程的
+* 生命周期：新建--就绪--执行--（阻塞）--死亡
+
+### 多线程（multi-thread）
+
+#### 优点
+
+* 提高应用程序的响应，对图形化界面更有意义，增强用户体验
+* 提高CPU的利用率
+* 改善程序结构
+
+#### 应用场合
+
+* 程序需要同时执行两个或多个任务
+* 程序需要实现一些需要等待的任务时，比如：用户输入，文件读写，网络操作，搜索等
+* 需要一些后台运行的程序时
+
+#### 生成线程
+
+1. 通过继承：extends Thread
+
+```java
+class MyThread extends Thread{
+    public void run(){
+        for (int i = 0; i < 100; i++) {
+            if(i % 2 == 0)
+            System.out.println(i);
+        }
+    }
+}
+
+
+public class ThreadTest {
+    public static void main(String[] args) {
+        MyThread mt = new MyThread();
+        //调用start（）方法：1⃣ 启动当前的线程 2⃣ 调用当前线程的run（）方法
+        mt.start();
+
+        //如下操作仍是在main线程中执行的
+        for (int i = 0; i < 100; i++) {
+            if(i % 2 == 0)
+                System.out.println(i + "******  main()    ********");
+        }
+
+    }
+}
+```
+
+2. 通过接口：implements Runnable
+
+```java
+class MThread implements Runnable{
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            if(i % 2 ==0){
+                System.out.println(Thread.currentThread().getName() + ":" + i);
+            }
+        }
+    }
+}
+
+public class ThreadTest2 {
+    public static void main(String[] args) {
+        MThread mThread = new MThread();
+        Thread t1 = new Thread(mThread);
+        t1.start();
+
+        Thread t2 = new Thread(mThread);
+        t2.start();
+    }
+}
+```
+
+说明：
+
+1. 在开发中，优先选择实现接口的方式来创建线程。因为实现的方式没有类的单继承性的局限性；实现的方式更适合来处理多个线程有共享数据的情况。
+2. 两种方式的关系：public class Thread implements Runnable{	}
+3. 相同点：都需要重写run()
+
+
+
+## Java同步机制来解决线程安全的问题
+
+### 死锁
+
+理解：
+
+* 不同的线程分别占用对方需要的同步资源不放弃，都在等待对方放弃自己需要的同步资源，就形成了线程的死锁
+* 出现死锁后，不会出现异常，不会出现提示，只是所有的线程都处于阻塞状态，无法继续
+* 使用同步时，避免出现死锁
+
+
+
+### 同步机制
+
+#### 同步代码块
+
+```java
+synchronized (同步监视器){
+  //需要被同步的代码
+}
+```
+
+说明：
+
+* 操作共享数据的代码，即为需要同步的代码
+* 共享数据：多个线程共同操作的变量
+* 同步监视器：锁。任何一个类的对象，都可以充当锁，但是多个线程必须要共用同一把锁
+
+```java
+package Thread;
+
+//synchronized(同步监视器){
+//      需要被同步的代码
+//}
+
+class Window3 implements Runnable{
+    private int ticket = 100;
+    Object obj = new Object();
+
+    @Override
+    public void run() {
+        while(true){
+            //this也可以作为对象
+            synchronized(obj){
+                if(ticket > 0){
+
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(Thread.currentThread().getName() + ":卖票，票号为：" + ticket);
+                    ticket--;
+                }else{
+                    break;
+                }
+            }
+        }
+    }
+}
+
+public class WindowTest3 {
+    public static void main(String[] args) {
+        Window3 w = new Window3();
+
+        Thread t1 = new Thread(w);
+        Thread t2 = new Thread(w);
+        Thread t3 = new Thread(w);
+
+        t1.setName("窗口1");
+        t2.setName("窗口2");
+        t3.setName("窗口3");
+
+        t1.start();
+        t2.start();
+        t3.start();
+
+    }
+}
+```
+
+
+
+#### 同步方法
+
+```java
+public synchronized void show(){
+  // 需要被同步的代码
+}
+```
+
+说明：
+
+* 同步方法仍然涉及到同步监视器，只是不需要显式的声明
+* 非static的同步方法，同步监视器为**this**
+* static的同步方法，同步监视器为**当前类本身**
+
+
+
+#### Lock（JDK5.0增加）
+
+实现ReentrantLock类，调用lock()和unlock()
+
+##### synchronized和Lock的异同点
+
+相同点：二者都可以解决线程安全的问题
+
+不同点：
+
+1. synchronized机制在执行完相应的同步代码后，自动释放同步监视器
+2. Lock需要手动地启动同步lock()，同时结束同步也需要手动实现unlock()
+
+```java
+package Thread;
+
+//解决线程安全问题方式三：Lock
+
+import java.util.concurrent.locks.ReentrantLock;
+
+class WindowLock implements Runnable{
+    private int ticket = 100;
+
+    //1.实例化ReentrantLock
+    private ReentrantLock lock = new ReentrantLock();
+    @Override
+    public void run() {
+
+
+        while(true){
+            try{
+                //2.调用锁定方法lock（）
+                lock.lock();
+
+                if(ticket > 0){
+
+                    try {
+                        Thread.sleep(100);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(Thread.currentThread().getName() + ":卖票，票号为：" + ticket);
+                    ticket--;
+                }else {
+                    break;
+                }
+            }finally {
+                //3.调用解锁方法unlock（）
+                lock.unlock();
+            }
+
+        }
+    }
+}
+
+public class LockTest1 {
+    public static void main(String[] args) {
+        WindowLock wl = new WindowLock();
+
+        Thread t1 =new Thread(wl);
+        Thread t2 =new Thread(wl);
+        Thread t3 =new Thread(wl);
+
+        t1.setName("窗口1");
+        t2.setName("窗口2");
+        t3.setName("窗口3");
+
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+}
+```
+
+优先使用的顺序：
+
+Lock--同步代码块--同步方法
+
+
+
+### 线程通信
+
+案例：使用两个线程打印1-100，交替打印
+
+#### 涉及到的方法：wait() & notify() & notifyAll()
+
+* wait（）：一旦执行此方法，当前线程就会进入阻塞状态并释放同步监视器
+* notify（）：一旦执行此方法，就会唤醒被wait的一个线程。如果有多个线程被wait，就会唤醒优先级高的
+* notifyAll（）：一旦执行此方法，就会唤醒所有被wait的线程
+
+说明：
+
+* wait（），notify（），notifyAll（）三个方法必须使用在同步代码块或同步方法中
+* wait（），notify（），notifyAll（）三个方法的调用者必须是同步代码块或同步方法中的同步监视器。否则，会出现IllegalManitorStateException
+* wait（），notify（），notifyAll（）三个方法都定义在java.lang.Object类中
+
+#### sleep() & wait()
+
+相同点：一旦执行方法，都可以使当前的线程进入阻塞状态
+
+不同点：
+
+1. 声明的位置不同，Thread类声明sleep（），Object类声明wait（）
+2. 调用范围不同，sleep（）可以在任何需要的场景下调用，wait（）必须在同步代码块或同步方法中
+3. sleep（）不释放同步监视器，wait（）释放同步监视器
+
+
+
+### 创建线程的其他方式
+
+#### 实现Callable接口（JDK5增加）
+
+如何理解Callable接口比Runnable接口强大？
+
+1. call（）可以有返回值
+2. call（）可以抛出异常，被外面的操作捕获，获取异常信息
+3. Callable是支持范型的
+
+
+
+#### 线程池
+
+思路：
+
+提前创建好多个线程放入线程池中，使用时直接获取，使用完放回池中，可以避免频繁地创建销毁，实现重复利用
+
+优点：
+
+1. 提高响应速度（减少创建新线程的时间）
+2. 降低资源消耗
+3. 便于线程管理
+
+一些参数：
+corePoolSize：核心池的大小
+
+maximumPoolSize：最大线程数
+
+keepAliveTime：最多保持时间
+
+
+
+## 常用类
+
+### 枚举类
+
+说明：
+
+1. 类的对象有限个，确定的，我们称之为枚举类
+2. 当需要定义一组常量时，建议使用枚举类
+
+使用enum关键字定义枚举类
+
+```java
+enum Season{
+  SPRING("spring","spring season");
+  SUMMER("summer","summer season");
+  
+  // 声明season对象的属性：private final修饰
+  private final String SeasonName;
+  private final String SeasonDesc;
+  
+  // 私有化类的构造器，并给对象属性赋值
+  private Season(String seasonName,String seasonDesc){
+    this.seasonName = seasonName;
+    this.seasonDesc = seasonDesc;
+  }
+  
+  // ...一些public的方法
+}
+```
+
+
+
+### Date类
+
+#### 基本概念
+
+两个构造器：
+
+Date():创建当前时间的Date对象
+
+Date(long time):创建指定毫秒数的Date对象
+
+>  System.currentTimeMills():返回当前时间（毫秒数）
+
+两个方法：
+
+toString():显示当前的年月日时分秒
+
+getTime():获取当前Date对象的毫秒数（时间戳）
+
+#### 相关的API
+
+* SimpleDateFormat类
+* Calendar抽象类
+* LocalDate类
+* LocalTime类
+* LocalDateTime类
+* DataTimeFormatter类
+
+
+
+### BigInteger类&BigDecimal类
+
+BigInteger可以表示不可变的任意精度的整数
+
+要求数字精度比较高，用到java.math.BigDecimal类
+
+
+
+### String类
+
+#### 说明
+
+* String声明为final的，不可被继承
+* String实现了Serializable接口：表示支持序列化；实现了Comparable接口：表示String可以比较大小
+* String内部定义了final char[] value用于存储字符串数据
+* String代表**不可变**的字符序列。体现：对当前字符串重新赋值时，需要重新指定内存区域
+* 通过字面量的方式（区别于new）给一个字符串赋值，此时的字符串值声明在字符串常量池中
+* 字符串常量池中是不会存储相同内容的字符串的
+
+#### String & StringBuffer & StringBuilder
+
+相同点：底层使用char[]存储
+
+不同点：
+
+String：不可变的字符序列
+
+StringBuffer：可变的字符序列，线程安全的，效率低(synchronized)
+
+StringBuilder：可变的字符序列，线程不安全的，效率高
+
+效率：StringBuilder>StringBuffer>String
+
+#### StringBuffer & StringBuilder的方法
+
+增：append(***)
+
+删：delete(int start,int end)
+
+改：setCharAt(int n, char ch) / replace(int,int,String)
+
+查：charAt(int n)
+
+长度：length()
+
+遍历：for + charAt()
+
+
+
+## Java 比较器
+
+### 使用背景
+
+Java中的对象，正常情况下，只能进行等于/不等于比较，不能使用大于/小于。但在开发中，经常需要比较对象的大小。
+
+### 实现
+
+* 实现Comparable接口
+* 实现Comparator接口
+
+#### 自然排序：使用Comparable接口
+
+1. 像String，Wrapper等实现了Comparable接口，重写了compareTo（obj）方法，进行了**从小到大**的排序
+2. 重写compareTo（obj）的规则：
+
+如果当前对象this大于形参对象obj，则返回正整数
+
+如果当前对象this小于形参对象obj，则返回负整数
+
+如果当前对象this等于形参对象obj，则返回0
+
+e.g. S1.compareTo(S2); //1,则S1>S2
+
+3. 对于自定义类，如果需要排序，我们可以自定义类实现Comparable接口，重写compareTo（obj）方法
+
+```java
+@override
+public int compareTo(obj o){
+  if(o instanceof Goods){
+    Goods goods = (Goods)o;
+    if(this.price > goods.price){
+      return 1;
+    }else if(this.price < goods.price){
+      return -1;
+    }else{
+      return 0;
+    }
+  }
+  throw new RuntimeException("Invalid!");
+}
+```
+
+
+
+#### 定制排序：实现Comparator接口
+
+1. 背景：当实现了Comparable接口，但排序规则不适合当前的操作
+2. 重写compare(Object o1,Object o2)方法：
+
+如果方法返回正整数，则表示o1>o2;
+
+如果方法返回负整数，则表示o1<o2;
+
+如果方法返回0，则表示o1==o2.
+
+
+
+#### 两种排序方式的比较
+
+1. Comparable接口的方式一旦确定，保证Comparable接口实现类的对象在任何位置都可以比较大小
+2. Comparator接口属于临时性的比较
+
+
+
+## 集合
+
+### 集合与数组
+
+定义：集合与数组都是对多个数据进行存储操作的结构，简称**Java容器**
+
+数组存储的特点：一旦初始化以后，其长度就确定了；数组一旦定义好，其元素的类型也确定了
+
+数组存储的缺点：长度不可修改；数组中提供的方法很有限
+
+
+
+### 集合的分类
+
+* 集合框架
+  * Collection接口：单列集合，用来存储一个一个的对象
+    * List接口：存储有序，可重复的数据（类似“动态”数组）--ArrayList、LinkedList、Vector
+    * Set接口：存储无序，不可重复的数据（类似高中“集合”）--HashSet、LinkedHashSet、TreeSet
+  * Map接口
+
+
+
+#### Collection接口
+
+遍历Collection元素的方法：
+
+##### 1. 迭代器接口：Iterator
+
+```java
+public void test(){
+  Collection collection = new ArrayList();
+  collection.add(123456);
+  Iterator iterator = collection.iterator();
+  // 判断是否还有下一个元素
+  while (iterator.hasNext()){
+    System.out.println(iterator.next());
+  }
+}
+```
+
+##### 2. foreach（内部仍然调用了迭代器）
+
+```java
+//for(集合元素类型 局部变量：集合对象)
+for(Object obj:collection){
+  System.out.println(obj);
+}
+```
+
+
+
+#### Collection子接口：List
+
+存储有序的，可重复的数据
+
+* ArrayList：List接口的主要实现类，线程不安全，效率高；底层使用Object[] elementData存储
+* LinkedList：对于频繁地插入删除操作，使用此类的效率比ArrayList高，底层使用双向链表存储
+* Vector：List接口的古老实现类，线程安全，效率低，底层使用Object[] elementData存储
+
+常用方法：
+
+增：add(Object obj)
+
+删：remove(int index)/remove(Object obj)
+
+改：set(int index,Object element)
+
+查：get(int index)
+
+插：add(int index, Object element)
+
+长度：size()
+
+遍历：Iterator迭代器、foreach、普通循环
+
+> 存储元素的要求：添加的对象，所在的类要重写equals（）方法
+
+
+
+#### Collection子接口：Set
+
+存储无序的，不可重复的数据
+
+**以HashSet为例**
+
+无序性：不等于随机性，存储的数据在底层数组中并非按照索引的顺序添加，而是根据数据的哈希值确定的
+
+不可重复性：保证添加的元素按照equals（）判断时，不能返回true，即相同的元素只能添加一个
+
+元素添加过程：
+
+* 1.向HashSet中添加元素a，首先调用元素a所在类的hashcode（），计算a的哈希值，此哈希值接着通过某种算法计算出HashSet底层数组中的存放位置
+* 2.判断数组此位置上是否已有元素
+  * 2.1 没有元素，则元素a添加成功（情况一）
+  * 2.2 有元素b，则比较元素a和元素b的哈希值
+    * 2.2.1 如果hash值不同，则a添加成功（情况二）
+    * 2.2.2 如果hash值相同，调用a所在类的equals（）
+      * 2.2.2.1 equals（）返回true，a添加失败
+      * 2.2.2.2 equals（）返回false，a添加成功（情况三）
+
+情况二和情况三：
+
+jdk7：元素a放到数组中，指向原来的元素
+
+jdk8：原来的元素在数组中不变，指向a
+
+
+
+HashSet底层：数组+链表（jdk7）
+
+分类：
+
+* HashSet：Set接口的主要实现类，线程不安全的，可以存储null值
+* LinkedHashSet：HashSet的子类
+  * 遍历其内部数据时，可以按照添加的顺序遍历（因为在添加数据的同时，每个数据会维护两个引用，分别记录前后的两个数据）
+  * 对于频繁的遍历操作，LinkedHashSet效率高于HashSet
+* TreeSet：可以按照添加对象的指定属性，进行排序。底层是红黑树，与排序相关，应用到Comparable
+
+
+
+存储对象所在类的要求：
+
+HashSet/LinkedHashSet：向Set中添加的数据，其所在的类一定要重写hashCode（）和equals（）
+
+
+
+#### Map接口
+
+双列数据，存储key-value对的数据
+
+分类：
+
+* HashMap：Map的主要实现类，线程不安全，效率高，可以存储null的key，value
+* LinkedHashMap：HashMap的子类。
+  * 保证在遍历map元素时，可以按照添加的顺序实现遍历（因为在原HashMap的基础上，添加了一对指针，指向前一个元素和后一个元素）
+  * 对于频繁的遍历操作，效率高于HashMap
+* TreeMap：保证按照添加的key-value对进行排序，实现排序遍历。此时考虑key的自然排序或定制排序，底层使用红黑树
+* HashTable：古老的Map实现类，线程安全，效率低，不能存储null的key或value
+* Properties：HashTable子类，常用来处理配置文件。key和value都是String类型
+
+
+
+HashMap的底层：
+
+数组+链表（jdk7）
+
+数组+链表+红黑树（jdk8）
+
+
+
+##### HashMap的实现原理
+
+一、在jdk7中的实现原理
+
+HashMap map = new HashMap();
+
+在实例化以后，底层创建了长度为16的一维数组Entry[] table
+
+map.put(key1,value1);
+
+Map.put(key2,value2);...
+
+首先调用key1所在类的hashCode（）计算key1的hash值，此hash值经过某种算法计算以后，得到在Entry[]中的存放位置
+
+* 1 如果此位置上的数据为空，则key1-value1添加成功
+* 2 如果此位置上的数据不为空，则比较key1与其他数据的hash值
+  * 2.1 key1的hash值与其他数据的hash值不同，则添加成功
+  * 2.2 key1的hash值与其他数据的hash值相同，则继续比较equals（）
+    * 2.2.1 返回false，key1-value1添加成功
+    * 2.2.2 返回true，value1替换value x
+
+二、HashMap在jdk8相比于jdk7的不同
+
+* new HashMap（）：底层没有创建长度为16的数组
+* jdk8底层的数组是：Node[]，而不是Entry[]
+* 首次调用put（），底层创建长度为16的数组
+* 七上八下
+
+
+
+### Collections工具类
+
+作用：操作Collection和Map的工具类
+
+常用方法：
+
+* reverse(List)
+* shuffle(List)：对List集合元素进行随机排序
+* sort(List)
+* swap(Listing,int)
+
+说明：ArrayList和HashMap线程不安全，我们可以使用synchronizedList(List list)和synchronizedMap(Map map)
+
+
+
+## IO流
+
+### File类
+
+#### 理解
+
+* File类的一个对象，代表一个文件或者文件目录
+* File类声明在java.io包下
+* File类中涉及到关于文件或文件目录的创建、删除、重命名、修改时间、文件大小写等写法，并未涉及到写入或读取文件的操作。如果需要写入或读取文件内容，必须使用IO流来完成
+* 后续File类的对象常会作为参数传递到流的构造器中，指明读取或写入的“终点”
+
+#### File的实例化
+
+常用的构造器：
+
+File(String filePath)
+
+File(String parentPath,String childPath)
+
+File(File parentFile,String childPath)
+
+路径的分类：
+
+相对路径：相较于某个路径下，指明的路径
+
+绝对路径：包含盘符在内的文件或文件目录的路径
+
+
+
+### IO流
+
+#### 流的分类
+
+1. 操作数据单位：字节流，字符流
+2. 数据的流向：输入流、输出流
+3. 流的角色：节点流、处理流
+
+#### 重要的流结构
+
+| 抽象基类 | InputStream         | OutputStream         | Reader         | Writer         |
+| -------- | ------------------- | -------------------- | -------------- | -------------- |
+| 节点流   | FileInputStream     | FileOutputStream     | FileReader     | FileWriter     |
+| 缓冲流   | BufferedInputStream | BufferedOutputStream | BufferedReader | BufferedWriter |
+
+#### 输入、输出的标准化过程
+
+输入过程：
+
+1. 创建File类的对象，指明读取的数据来源（文件一定要存在）
+2. 创建对应的输入流，将File类的对象作为参数，传入流的构造器中
+3. 具体的读入过程：创建相应的byte[]或char[]
+4. 关闭流资源
+
+说明：程序中出现的异常需要使用try-catch-finally处理
+
+```java
+File file1 = new File("input.txt");
+File file2 = new File("output.txt");
+// 
+FileInputStream fis = new FileInputStream(file1);
+FileOutputStream fos = new FileOutputStream(file2);
+// 缓冲流增加效率
+BufferedInputStream bis = new BufferedInputStream(fis);
+BufferedOutputStream bos = new BufferedOutputStream(fos);
+// 处理
+byte[] buffer = new byte[10];
+int len;
+while((len=bis.read(buffer))!=-1){
+  bos.write(buffer,0,len);
+}
+//try-catch-finally
+bis.close();
+bos.close();
+```
+
+输出过程：
+
+1. 创建File类对象，指明写出数据的位置
+2. 创建输出流
+3. write(char[]/byte[] buffer,0,len)
+4. 关闭
+
+> 1. 对于文本文件（.txt,.java,.c,.cpp)，使用字符流处理
+> 2. 对于非文本文件（.jpg,.mp3,.mp4,.doc)，使用字节流处理
+
+
+
+#### 缓冲流
+
+作用：提高流的读取，写入的速度
+
+原因：内部提供了一个缓冲区，默认情况是8kb
+
+flush（）：刷新缓冲区，将缓冲区的内容写出
+
+
+
+#### 转换流
+
+作用：提供字节流和字符流之间的转换
+
+属于字符流
+
+* InputStreamReader：字节输入流to字符输入流
+  * 解码：字节，字节数组to字符数组，字符串
+* OutputStreamWriter：字符输出流to字节输出流
+  * 编码：字符数组、字符串to字节数组、字节
+
+
+
+#### 对象流
+
+* ObjectOutputStream：序列化过程
+  * 内存中的对象to存储中的文件、通过网络传输出去
+* ObjectInputStream：反序列化过程
+  * 存储中的文件、通过网络接收过来to内存中的对象
+
+
+
+## 注解Annotation
+
+### 理解
+
+代码里的特殊标记，这些标记可以在编译，类加载，运行时被读取，并执行相应的处理
+
+框架 = 注解 + 反射机制 + 设计模式
+
+### 使用案例
+
+* 自动生成的文档注释
+* JDK内置的基本注解
+  * @Override
+  * @Deprecated表示所修饰的元素（类，方法等）已过时
+  * @SuppressWarnings抑制编译器警告
+* 调用框架，配置文件
+
+
+
+### 元注解
+
+对现有的注解进行解释说明的注解
+
+jdk提供的4种元注解：
+
+@Retention：指定修饰的Annotation的生命周期：SOURSE/CLASS（默认）/RUNTIME（只有RUNTIME，才能通过反射获取）
+
+@Target：用于修饰哪些程序元素
+
+@Documented：表示被修饰的Annotation在被javadoc解析时保留
+
+@Inherited：具有继承性
+
+
+
+如何获取注解信息：通过反射来进行获取调用
+
+前提：元注解Retention声明的生命周期为RUNTIME
